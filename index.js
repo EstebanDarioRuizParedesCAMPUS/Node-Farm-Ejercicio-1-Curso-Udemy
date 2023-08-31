@@ -90,27 +90,65 @@ fs.readFile('./txt/tuna.txt', 'utf-8', (err,data1) =>{
 
 // Primer servidor web que acepte request y responses
 
+const replaceTemplate = (template,info) => {
+    let output = template.replace(/{%PRODUCTNAMES%}/g, info.productName)
+    output = output.replace(/{%IMAGE%}/g, info.image)
+    output = output.replace(/{%FROM%}/g, info.from)
+    output = output.replace(/{%NUTRIENT%}/g, info.nutrients)
+    output = output.replace(/{%QUANTITY%}/g, info.quantity)
+    output = output.replace(/{%PRICE%}/g, info.price)
+    output = output.replace(/{%DESCRIPTION%}/g, info.description)
+    output = output.replace(/{%ID%}/g, info.id)
+
+    if(!info.organic){
+        output = output.replace(/{%NOT_ORGANIC%}/g, 'not-organic')
+    }
+
+    return output
+} 
+
 const tempOverview = fs.readFileSync(`${__dirname}/templates/template-overview.html`,'utf-8')
 const tempProducts = fs.readFileSync(`${__dirname}/templates/template-product.html`,'utf-8')
 const tempCard = fs.readFileSync(`${__dirname}/templates/template-card.html`,'utf-8')
-const data = fs.readFileSync(`${__dirname}/dev-data/data.json`,'utf-8')
 
+const data = fs.readFileSync(`${__dirname}/dev-data/data.json`,'utf-8')
 
 const dataObject = JSON.parse(data)
 
 const server = http.createServer((req,res) =>{
-    const pathName = req.url
+
+
+    const {query ,pathname} = url.parse(req.url,true)
+
 
     //Overview Page
-    if (pathName === '/' || pathName === '/overview'){
-        res.end('This is the overview')
+    if (pathname === '/' || pathname === '/overview'){
 
-    //Products Page
-    } else if (pathName === '/product'){
-        res.end('This is the products')
+        
+        res.writeHead(200,{
+            'Content-type': 'text/html'
+        })
+        
+        const cardHTML = dataObject.map(element => replaceTemplate(tempCard,element)).join('')
+        
+        const output = tempOverview.replace('{%PRODUCT_CARDS%}',cardHTML)
+
+        //res.end('This is the overview')
+        res.end(output)
+        
+        //Products Page
+    } else if (pathname === '/product'){ 
+
+        res.writeHead(200,{
+            'Content-type': 'text/html'
+        })
+        const product = dataObject[query.id]       
+        const output =  replaceTemplate(tempProducts,product)
+        console.log(query);
+        res.end(output )
 
     //API
-    }  else if (pathName === '/api'){
+    }  else if (pathname === '/api'){
         res.writeHead(200,{
             'Content-type': 'application/json'
         })
