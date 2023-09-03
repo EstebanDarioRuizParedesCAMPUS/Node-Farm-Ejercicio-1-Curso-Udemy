@@ -1,11 +1,15 @@
 //Dependencia que viene nativa del sistema para los sistemas de archivos (File System)
-const fs = require('fs')
+const fs = require('fs');
 
 // Dependencia nativa para poder llamar los métodos http en la página
-const http = require('http')
+const http = require('http');
 
 // Dependencia para poder usar los métodos de URL existentes
-const url = require('url')
+const url = require('url');
+
+const slugify = require('slugify');
+
+const replaceTemplate = require('./modules/replaceTemplate');
 
 /////////////////////////////////////////////77
 
@@ -64,8 +68,6 @@ fs.writeFile('./txt/final.txt', `Random stuff`, 'utf-8', (err) =>{
 
 console.log('writting data') 
 
-
-
 //Callback Hell
 
 //El callback Hell el nombre que se le pone cuando en una función llegan a haber demasiados callbacks que dificultan la lectura y comprensión de código, el callback hell se caracteriza por tener una estructura triangular como se puede observar, pero se puede evitar con las promesas, o con las funciones Async/Await
@@ -83,97 +85,83 @@ fs.readFile('./txt/tuna.txt', 'utf-8', (err,data1) =>{
     })
 })*/
 
-
 ////////////////////////////////////
 
 // SERVER WEB CLASS
 
 // Primer servidor web que acepte request y responses
 
-const replaceTemplate = (template,info) => {
-    let output = template.replace(/{%PRODUCTNAMES%}/g, info.productName)
-    output = output.replace(/{%IMAGE%}/g, info.image)
-    output = output.replace(/{%FROM%}/g, info.from)
-    output = output.replace(/{%NUTRIENT%}/g, info.nutrients)
-    output = output.replace(/{%QUANTITY%}/g, info.quantity)
-    output = output.replace(/{%PRICE%}/g, info.price)
-    output = output.replace(/{%DESCRIPTION%}/g, info.description)
-    output = output.replace(/{%ID%}/g, info.id)
+const tempOverview = fs.readFileSync(
+  `${__dirname}/templates/template-overview.html`,
+  'utf-8'
+);
+const tempProducts = fs.readFileSync(
+  `${__dirname}/templates/template-product.html`,
+  'utf-8'
+);
+const tempCard = fs.readFileSync(
+  `${__dirname}/templates/template-card.html`,
+  'utf-8'
+);
 
-    if(!info.organic){
-        output = output.replace(/{%NOT_ORGANIC%}/g, 'not-organic')
-    }
+const data = fs.readFileSync(`${__dirname}/dev-data/data.json`, 'utf-8');
 
-    return output
-} 
+const dataObject = JSON.parse(data);
 
-const tempOverview = fs.readFileSync(`${__dirname}/templates/template-overview.html`,'utf-8')
-const tempProducts = fs.readFileSync(`${__dirname}/templates/template-product.html`,'utf-8')
-const tempCard = fs.readFileSync(`${__dirname}/templates/template-card.html`,'utf-8')
+//const slugs = dataObject.map((e) => slugify(e.productName), { lower: true });
+//console.log(slugs);
 
-const data = fs.readFileSync(`${__dirname}/dev-data/data.json`,'utf-8')
+const server = http.createServer((req, res) => {
+  const { query, pathname } = url.parse(req.url, true);
 
-const dataObject = JSON.parse(data)
+  //Overview Page
+  if (pathname === '/' || pathname === '/overview') {
+    res.writeHead(200, {
+      'Content-type': 'text/html',
+    });
 
-const server = http.createServer((req,res) =>{
+    const cardHTML = dataObject
+      .map((element) => replaceTemplate(tempCard, element))
+      .join('');
 
+    const output = tempOverview.replace('{%PRODUCT_CARDS%}', cardHTML);
 
-    const {query ,pathname} = url.parse(req.url,true)
+    //res.end('This is the overview')
+    res.end(output);
 
-
-    //Overview Page
-    if (pathname === '/' || pathname === '/overview'){
-
-        
-        res.writeHead(200,{
-            'Content-type': 'text/html'
-        })
-        
-        const cardHTML = dataObject.map(element => replaceTemplate(tempCard,element)).join('')
-        
-        const output = tempOverview.replace('{%PRODUCT_CARDS%}',cardHTML)
-
-        //res.end('This is the overview')
-        res.end(output)
-        
-        //Products Page
-    } else if (pathname === '/product'){ 
-
-        res.writeHead(200,{
-            'Content-type': 'text/html'
-        })
-        const product = dataObject[query.id]       
-        const output =  replaceTemplate(tempProducts,product)
-        console.log(query);
-        res.end(output )
+    //Products Page
+  } else if (pathname === '/product') {
+    res.writeHead(200, {
+      'Content-type': 'text/html',
+    });
+    const product = dataObject[query.id];
+    const output = replaceTemplate(tempProducts, product);
+    res.end(output);
 
     //API
-    }  else if (pathname === '/api'){
-        res.writeHead(200,{
-            'Content-type': 'application/json'
-        })
-        res.end(data)
+  } else if (pathname === '/api') {
+    res.writeHead(200, {
+      'Content-type': 'application/json',
+    });
+    res.end(data);
 
     //NOT FOUND
-    } else {
-        //Se declara que se ca a escribir un header y que el estado será de no encontrado (error 404)
-        res.writeHead(404,{
-            //Define el tipo de contenido que se va a enviar a la aplicación, en este caso texto formato HTML
-            'Content-type':'text/html',
-            //Se puede crear tambíen headers personalizados y el programa los leerá
-            'my-own-header':'hello-Worl'
-        })
-        //Este string se parsea como código HTML mostrando "You can't stay here" y los <h1></h1> quedan como formato
-        res.end("<h1>You can't stay here</h1>")
-    }
-
-})
+  } else {
+    //Se declara que se ca a escribir un header y que el estado será de no encontrado (error 404)
+    res.writeHead(404, {
+      //Define el tipo de contenido que se va a enviar a la aplicación, en este caso texto formato HTML
+      'Content-type': 'text/html',
+      //Se puede crear tambíen headers personalizados y el programa los leerá
+      'my-own-header': 'hello-World',
+    });
+    //Este string se parsea como código HTML mostrando "You can't stay here" y los <h1></h1> quedan como formato
+    res.end("<h1>You can't stay here</h1>");
+  }
+});
 
 //Para que el servidor pueda escuchar los llamados del puerto se usa la función .listen
 //La función vuenta con 3 parámetros, el numero del puerto donde se escucha, el servidor donde se va a ejecutar el llamado (en este caso nuestra IP de servidor local) y un callback que manda el mensaje cuando se conecta exitosamente al servidor.
 
-server.listen(5000,'127.0.0.1',()=>{
-    console.log('litening to request on port 5000');
-})
-
-
+server.listen(5000, '127.0.0.1', () => {
+  console.log('litening to request on port 5000');
+});

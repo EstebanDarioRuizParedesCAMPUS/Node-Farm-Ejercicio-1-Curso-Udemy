@@ -1,0 +1,25 @@
+{
+  "name": "node-farm",
+  "version": "1.0.0",
+  "description": "Aprendiendo Node.js en base a un curso de Udemy, en este caso ralizando el proyecto de Node Farm para aprender los conceptos básicos de Node.js",
+  "main": "index.js",
+  "scripts": {
+    "start": "nodemon index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/EstebanDarioRuizParedesCAMPUS/Node-Farm-Ejercicio-1-Curso-Udemy.git"
+  },
+  "author": "Esteban Ruiz (Esta versión)",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/EstebanDarioRuizParedesCAMPUS/Node-Farm-Ejercicio-1-Curso-Udemy/issues"
+  },
+  "homepage": "https://github.com/EstebanDarioRuizParedesCAMPUS/Node-Farm-Ejercicio-1-Curso-Udemy#readme",
+  "dependencies": {
+    "slugify": "^1.6.6"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  }
+}
